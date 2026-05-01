@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}MedAI Pro - Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+
+<style>
+.hero {
+  background: linear-gradient(135deg, #0f1e3d 0%, #1a2a4a 50%, #0f2a35 100%);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px;
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '🏥';
+  position: absolute; right: 40px; top: 50%; transform: translateY(-50%);
+  font-size: 100px; opacity: 0.08;
+}
+.hero h1 { font-family:'Space Grotesk',sans-serif; font-size: 32px; font-weight: 700; margin-bottom: 10px; }
+.hero h1 span { color: var(--accent); }
+.hero p { font-size: 15px; color: var(--text2); max-width: 540px; line-height: 1.7; margin-bottom: 24px; }
+.hero-chips { display: flex; gap: 10px; flex-wrap: wrap; }
+.chip { padding: 6px 14px; background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2); border-radius: 20px; font-size: 12px; color: var(--accent); }
+
+.feature-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-bottom: 28px;
+}
+.feature-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+  padding: 22px; text-decoration: none; color: var(--text);
+  transition: all 0.25s; display: flex; flex-direction: column; gap: 12px;
+}
+.feature-card:hover {
+  border-color: var(--accent); transform: translateY(-3px);
+  box-shadow: 0 8px 32px rgba(0,212,255,0.12);
+}
+.feature-icon {
+  width: 48px; height: 48px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center; font-size: 22px;
+}
+.feature-card h3 { font-size: 15px; font-weight: 600; }
+.feature-card p { font-size: 12.5px; color: var(--text2); line-height: 1.6; }
+.feature-arrow { margin-top: auto; color: var(--text3); font-size: 12px; display: flex; align-items: center; gap: 6px; }
+.feature-card:hover .feature-arrow { color: var(--accent); }
+
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+</style>
+
+<div class="hero">
+  <h1>Welcome to <span>MedAI Pro</span> 👨‍⚕️</h1>
+  <p>Your intelligent medical assistant powered by Groq AI. Get instant medical guidance, symptom analysis, and health insights — all processed privately and securely.</p>
+  <div class="hero-chips">
+    <div class="chip">🔒 100% Private</div>
+    <div class="chip">⚡ Fast AI Responses</div>
+    <div class="chip">🤖 Powered by Groq AI</div>
+  </div>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(0,212,255,0.1)">🩺</div>
+    <div class="stat-info"><h3>11</h3><p>AI Features</p></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(16,185,129,0.1)">🔒</div>
+    <div class="stat-info"><h3>100%</h3><p>Private & Secure</p></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(124,58,237,0.1)">⚡</div>
+    <div class="stat-info"><h3>Fast</h3><p>AI Responses</p></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:rgba(245,158,11,0.1)">🤖</div>
+    <div class="stat-info"><h3>Groq</h3><p>Powered Model</p></div>
+  </div>
+</div>
+
+<div class="feature-grid">
+  <a href="/symptom-checker" class="feature-card">
+    <div class="feature-icon" style="background:rgba(239,68,68,0.1)">🩺</div>
+    <div><h3>Symptom Checker</h3><p>Describe symptoms and get AI-powered analysis of possible conditions and recommended actions.</p></div>
+    <div class="feature-arrow">Analyze symptoms <i class="fas fa-arrow-right"></i></div>
+  </a>
+  <a href="/medicine-suggester" class="feature-card">
+    <div class="feature-icon" style="background:rgba(0,212,255,0.1)">💊</div>
+    <div><h3>Medicine Suggester</h3><p>Get OTC medicine suggestions, dosage info, and alternative remedies for your condition.</p></div>
+    <div class="feature-arrow">Find medicines <i class="fas fa-arrow-right"></i></div>
+  </a>
+  <a href="/injury-analyzer" class="feature-card">
+    <div class="feature-icon" style="background:rgba(245,158,11,0.1)">🩹</div>
+    <div><h3>Injury Analyzer</h3><p>Describe your injury for first aid guidance, severity assessment, and when to go to ER.</p></div>
+    <div class="feature-arrow">Analyze injury <i class="fas fa-arrow-right"></i></div>
+  </a>
+  <a href="/health-risk" class="feature-card">
+    <div class="feature-icon" style="background:rgba(16,185,129,0.1)">❤️</div>
+    <div><h3>Health Risk Assessment</h3><p>Comprehensive analysis of your risk for heart disease, diabetes, hypertension and more.</p></div>
+    <div class="feature-arrow">Assess risks <i class="fas fa-arrow-right"></i></div>
+  </a>
+  <a href="/drug-interaction" class="feature-card">
+    <div class="feature-icon" style="background:rgba(124,58,237,0.1)">⚗️</div>
+    <div><h3>Drug Interaction Checker</h3><p>Check if your medications are safe to take together and detect dangerous interactions.</p></div>
+    <div class="feature-arrow">Check interactions <i class="fas fa-arrow-right"></i></div>
+  </a>
+  <a href="/nutrition" class="feature-card">
+    <div class="feature-icon" style="background:rgba(16,185,129,0.1)">🥗</div>
+    <div><h3>Diet & Nutrition</h3><p>Personalized meal plans, calorie targets, and nutritional advice based on your health goals.</p></div>
+    <div class="feature-arrow">Get nutrition plan <i class="fas fa-arrow-right"></i></div>
+  </a>
+  <a href="/mental-health" class="feature-card">
+    <div class="feature-icon" style="background:rgba(124,58,237,0.1)">🧠</div>
+    <div><h3>Mental Health Check</h3><p>Assess your mental wellbeing and get coping strategies and wellness recommendations.</p></div>
+    <div class="feature-arrow">Check wellbeing <i class="fas fa-arrow-right"></i></div>
+  </a>
+  <a href="/patient-profile" class="feature-card">
+    <div class="feature-icon" style="background:rgba(0,212,255,0.1)">👤</div>
+    <div><h3>Patient Profile</h3><p>Save and manage patient information, medical conditions, and health data.</p></div>
+    <div class="feature-arrow">Manage profile <i class="fas fa-arrow-right"></i></div>
+  </a>
+  <a href="/medical-history" class="feature-card">
+    <div class="feature-icon" style="background:rgba(245,158,11,0.1)">📋</div>
+    <div><h3>Medical History</h3><p>Track visits, diagnoses, medications, and build a complete medical timeline.</p></div>
+    <div class="feature-arrow">View history <i class="fas fa-arrow-right"></i></div>
+  </a>
+  <a href="/nearby-hospitals" class="feature-card">
+    <div class="feature-icon" style="background:rgba(239,68,68,0.1)">🏥</div>
+    <div><h3>Nearby Hospitals</h3><p>Find hospitals, clinics, and pharmacies near you with directions and contact info.</p></div>
+    <div class="feature-arrow">Find hospitals <i class="fas fa-arrow-right"></i></div>
+  </a>
+  <a href="/chat-doctor" class="feature-card" style="border-color: rgba(0,212,255,0.3); background: linear-gradient(135deg, var(--card), #1a2a3a);">
+    <div class="feature-icon" style="background:rgba(0,212,255,0.15)">🤖</div>
+    <div><h3>Chat with Dr. AI</h3><p>Have a full conversation with your AI doctor. Ask any medical question anytime.</p></div>
+    <div class="feature-arrow" style="color:var(--accent)">Start chatting <i class="fas fa-arrow-right"></i></div>
+  </a>
+</div>
+
+<div class="disclaimer">
+  <i class="fas fa-triangle-exclamation"></i>
+  <span><strong>Medical Disclaimer:</strong> MedAI Pro is for educational and informational purposes only. It is NOT a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified healthcare provider for medical decisions.</span>
+</div>
+{% endblock %}

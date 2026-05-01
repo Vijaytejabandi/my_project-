@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Medicine Suggester - MedAI Pro{% endblock %}
+{% block page_title %}💊 Medicine Suggester{% endblock %}
+{% block content %}
+<div class="disclaimer"><i class="fas fa-triangle-exclamation"></i><span>AI suggestions only. Always consult a licensed pharmacist or doctor before taking any medication.</span></div>
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title">Enter Your Condition</div>
+    <div class="card-sub">Get OTC medicine suggestions and dosage guidelines</div>
+    <div class="form-group"><label>Medical Condition / Diagnosis</label>
+      <input type="text" id="condition" placeholder="e.g. Common cold, Migraine, Acid reflux, Fever..."></div>
+    <div class="form-row">
+      <div class="form-group"><label>Patient Age Group</label>
+        <select id="age"><option>Child (2-12)</option><option>Teen (13-17)</option><option selected>Adult (18-60)</option><option>Senior (60+)</option></select></div>
+      <div class="form-group"><label>Known Allergies</label>
+        <input type="text" id="allergies" placeholder="e.g. Penicillin, Aspirin, none"></div>
+    </div>
+    <div class="form-group"><label>Current Medications (if any)</label>
+      <input type="text" id="current_meds" placeholder="e.g. Metformin, Blood pressure pills..."></div>
+    <div class="form-group"><label>Severity</label>
+      <select id="severity"><option>Mild</option><option>Moderate</option><option>Severe</option></select></div>
+    <button class="btn btn-primary" id="suggestBtn" onclick="suggestMedicine()" style="width:100%">
+      <i class="fas fa-pills"></i> Get Medicine Suggestions</button>
+    <div class="loading" id="loading"><div class="spinner"></div><span>Finding suitable medicines...</span></div>
+  </div>
+  <div>
+    <div class="result-box" id="result"></div>
+    <div class="card" id="emptyState">
+      <div style="text-align:center;padding:40px 20px;color:var(--text3)">
+        <div style="font-size:60px;margin-bottom:16px">💊</div>
+        <div style="font-size:15px;color:var(--text2);margin-bottom:8px">Enter a condition to get medicine suggestions</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function suggestMedicine() {
+  const condition = document.getElementById('condition').value.trim();
+  if (!condition) { alert('Please enter a condition!'); return; }
+  setBtn('suggestBtn', true, '<i class="fas fa-spinner fa-spin"></i> Searching...');
+  showLoading(true);
+  document.getElementById('emptyState').style.display='none';
+  try {
+    const r = await fetch('/api/suggest-medicine', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({condition, age: document.getElementById('age').value,
+        allergies: document.getElementById('allergies').value,
+        current_meds: document.getElementById('current_meds').value,
+        severity: document.getElementById('severity').value})
+    });
+    const d = await r.json();
+    showResult(d.result);
+  } catch(e) { alert('Error: ' + e.message); document.getElementById('emptyState').style.display='block'; }
+  showLoading(false);
+  setBtn('suggestBtn', false, '<i class="fas fa-pills"></i> Get Medicine Suggestions');
+}
+</script>
+{% endblock %}

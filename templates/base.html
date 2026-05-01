@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}MedAI Assistant{% endblock %}</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root {
+  --bg: #0a0e1a;
+  --bg2: #0f1525;
+  --bg3: #151c30;
+  --card: #1a2238;
+  --card2: #1f2942;
+  --border: #2a3550;
+  --accent: #00d4ff;
+  --accent2: #7c3aed;
+  --accent3: #10b981;
+  --red: #ef4444;
+  --yellow: #f59e0b;
+  --text: #e8edf8;
+  --text2: #8892a4;
+  --text3: #5a6478;
+  --shadow: 0 8px 32px rgba(0,0,0,0.4);
+  --glow: 0 0 20px rgba(0,212,255,0.15);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+/* SIDEBAR */
+.sidebar {
+  position:fixed; left:0; top:0; width:260px; height:100vh;
+  background:var(--bg2); border-right:1px solid var(--border);
+  display:flex; flex-direction:column; z-index:100;
+  overflow-y:auto;
+}
+.sidebar-logo {
+  padding:24px 20px 20px;
+  border-bottom:1px solid var(--border);
+}
+.sidebar-logo .logo-icon {
+  width:44px; height:44px; background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-radius:12px; display:flex; align-items:center; justify-content:center;
+  font-size:22px; margin-bottom:10px;
+}
+.sidebar-logo h1 { font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700; }
+.sidebar-logo p { font-size:12px; color:var(--text2); margin-top:2px; }
+
+.sidebar-status {
+  margin:12px 16px; padding:10px 14px;
+  border-radius:10px; font-size:12px;
+  display:flex; align-items:center; gap:8px;
+}
+.sidebar-status.online { background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); color:var(--accent3); }
+.sidebar-status.offline { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:var(--red); }
+.status-dot { width:8px; height:8px; border-radius:50%; }
+.online .status-dot { background:var(--accent3); animation:pulse 2s infinite; }
+.offline .status-dot { background:var(--red); }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+
+.nav-section { padding:8px 12px; }
+.nav-label { font-size:10px; font-weight:600; color:var(--text3); letter-spacing:1px; text-transform:uppercase; padding:8px 8px 6px; }
+.nav-item {
+  display:flex; align-items:center; gap:12px; padding:10px 12px;
+  border-radius:10px; text-decoration:none; color:var(--text2);
+  font-size:13.5px; font-weight:500; transition:all 0.2s; margin-bottom:2px;
+}
+.nav-item:hover, .nav-item.active {
+  background:var(--card); color:var(--text);
+}
+.nav-item.active { color:var(--accent); border-left:3px solid var(--accent); }
+.nav-item .icon { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+.nav-item:hover .icon, .nav-item.active .icon { background:rgba(0,212,255,0.1); color:var(--accent); }
+
+/* MAIN CONTENT */
+.main { margin-left:260px; min-height:100vh; }
+.topbar {
+  height:64px; background:var(--bg2); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between; padding:0 28px;
+  position:sticky; top:0; z-index:50;
+}
+.topbar h2 { font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:600; }
+.topbar-right { display:flex; align-items:center; gap:12px; }
+.bvr-badge {
+  padding:6px 14px; background:var(--card); border:1px solid var(--border);
+  border-radius:20px; font-size:12px; color:var(--text2);
+}
+.bvr-badge span { color:var(--accent); font-weight:600; }
+
+.content { padding:28px; }
+
+/* CARDS */
+.card {
+  background:var(--card); border:1px solid var(--border); border-radius:16px;
+  padding:24px; margin-bottom:20px;
+}
+.card-title { font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:600; margin-bottom:4px; }
+.card-sub { font-size:13px; color:var(--text2); margin-bottom:20px; }
+
+/* FORMS */
+.form-group { margin-bottom:16px; }
+label { display:block; font-size:13px; font-weight:500; color:var(--text2); margin-bottom:6px; }
+input, select, textarea {
+  width:100%; padding:11px 14px; background:var(--bg3); border:1px solid var(--border);
+  border-radius:10px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:14px;
+  transition:border 0.2s; outline:none;
+}
+input:focus, select:focus, textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(0,212,255,0.08); }
+textarea { resize:vertical; min-height:90px; }
+select option { background:var(--bg3); }
+
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.form-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+
+/* BUTTONS */
+.btn {
+  padding:12px 24px; border-radius:10px; border:none; cursor:pointer;
+  font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600;
+  display:inline-flex; align-items:center; gap:8px; transition:all 0.2s;
+}
+.btn-primary { background:linear-gradient(135deg,var(--accent),#0099cc); color:#000; }
+.btn-primary:hover { transform:translateY(-1px); box-shadow:0 4px 20px rgba(0,212,255,0.3); }
+.btn-secondary { background:var(--card2); color:var(--text); border:1px solid var(--border); }
+.btn-danger { background:linear-gradient(135deg,var(--red),#c0392b); color:#fff; }
+.btn-success { background:linear-gradient(135deg,var(--accent3),#059669); color:#fff; }
+.btn-purple { background:linear-gradient(135deg,var(--accent2),#5b21b6); color:#fff; }
+.btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+/* RESULT BOX */
+.result-box {
+  background:var(--bg3); border:1px solid var(--border); border-radius:12px;
+  padding:20px; margin-top:16px; display:none; line-height:1.7;
+  white-space:pre-wrap; font-size:14px;
+}
+.result-box.show { display:block; animation:fadeIn 0.3s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+/* LOADING */
+.loading { display:none; align-items:center; gap:10px; padding:14px; color:var(--text2); font-size:14px; }
+.loading.show { display:flex; }
+.spinner { width:18px; height:18px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; }
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* SEVERITY BADGES */
+.badge { display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+.badge-green { background:rgba(16,185,129,0.15); color:var(--accent3); }
+.badge-yellow { background:rgba(245,158,11,0.15); color:var(--yellow); }
+.badge-red { background:rgba(239,68,68,0.15); color:var(--red); }
+.badge-blue { background:rgba(0,212,255,0.15); color:var(--accent); }
+
+/* GRID LAYOUTS */
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; }
+
+/* STATS */
+.stat-card {
+  background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px;
+  display:flex; align-items:center; gap:16px;
+}
+.stat-icon { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+.stat-info h3 { font-size:22px; font-weight:700; font-family:'Space Grotesk',sans-serif; }
+.stat-info p { font-size:12px; color:var(--text2); margin-top:2px; }
+
+/* TAGS */
+.tag-input-area { display:flex; flex-wrap:wrap; gap:6px; padding:10px; background:var(--bg3); border:1px solid var(--border); border-radius:10px; min-height:44px; cursor:text; }
+.tag { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:rgba(0,212,255,0.1); border:1px solid rgba(0,212,255,0.3); border-radius:20px; font-size:13px; color:var(--accent); }
+.tag .remove { cursor:pointer; opacity:0.7; } .tag .remove:hover { opacity:1; }
+.tag-input { border:none; background:none; color:var(--text); font-size:14px; outline:none; min-width:120px; flex:1; padding:2px; }
+
+/* DISCLAIMER */
+.disclaimer {
+  background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.25);
+  border-radius:10px; padding:12px 16px; font-size:12.5px; color:var(--yellow);
+  display:flex; align-items:flex-start; gap:10px; margin-bottom:20px;
+}
+
+/* MOBILE */
+@media (max-width:768px) {
+  .sidebar { width:220px; }
+  .main { margin-left:220px; }
+  .form-row, .form-row-3, .grid-2, .grid-3 { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🏥</div>
+    <h1>MedAI Pro</h1>
+    <p>AI Medical Assistant</p>
+  </div>
+  <div class="sidebar-status online" id="ollamaStatus">
+    <div class="status-dot"></div>
+    <span>Checking Groq AI...</span>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Dashboard</div>
+    <a href="/" class="nav-item {% if request.path=='/' %}active{% endif %}">
+      <div class="icon"><i class="fas fa-house"></i></div> Home
+    </a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Diagnostics</div>
+    <a href="/symptom-checker" class="nav-item {% if '/symptom' in request.path %}active{% endif %}">
+      <div class="icon"><i class="fas fa-stethoscope"></i></div> Symptom Checker
+    </a>
+    <a href="/injury-analyzer" class="nav-item {% if '/injury' in request.path %}active{% endif %}">
+      <div class="icon"><i class="fas fa-bandage"></i></div> Injury Analyzer
+    </a>
+    <a href="/health-risk" class="nav-item {% if '/health-risk' in request.path %}active{% endif %}">
+      <div class="icon"><i class="fas fa-heart-pulse"></i></div> Health Risk Assessment
+    </a>
+    <a href="/mental-health" class="nav-item {% if '/mental-health' in request.path %}active{% endif %}">
+      <div class="icon"><i class="fas fa-brain"></i></div> Mental Health Check
+    </a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Treatment</div>
+    <a href="/medicine-suggester" class="nav-item {% if '/medicine' in request.path %}active{% endif %}">
+      <div class="icon"><i class="fas fa-pills"></i></div> Medicine Suggester
+    </a>
+    <a href="/drug-interaction" class="nav-item {% if '/drug' in request.path %}active{% endif %}">
+      <div class="icon"><i class="fas fa-flask"></i></div> Drug Interactions
+    </a>
+    <a href="/nutrition" class="nav-item {% if '/nutrition' in request.path %}active{% endif %}">
+      <div class="icon"><i class="fas fa-apple-whole"></i></div> Diet & Nutrition
+    </a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Patient</div>
+    <a href="/patient-profile" class="nav-item {% if '/patient-profile' in request.path %}active{% endif %}">
+      <div class="icon"><i class="fas fa-user-injured"></i></div> Patient Profile
+    </a>
+    <a href="/medical-history" class="nav-item {% if '/medical-history' in request.path %}active{% endif %}">
+      <div class="icon"><i class="fas fa-file-medical"></i></div> Medical History
+    </a>
+    <a href="/nearby-hospitals" class="nav-item {% if '/nearby' in request.path %}active{% endif %}">
+      <div class="icon"><i class="fas fa-hospital"></i></div> Nearby Hospitals
+    </a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">AI Assistant</div>
+    <a href="/chat-doctor" class="nav-item {% if '/chat' in request.path %}active{% endif %}">
+      <div class="icon"><i class="fas fa-robot"></i></div> Chat with Dr. AI
+    </a>
+  </div>
+  <div style="margin-top:auto; padding:16px; border-top:1px solid var(--border); font-size:11px; color:var(--text3); text-align:center;">
+    VIJAY TEJA<br>Powered by Groq AI
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <h2>{% block page_title %}Dashboard{% endblock %}</h2>
+    <div class="topbar-right">
+      <div class="bvr-badge"><span>VIJAY </span>TEJA</div>
+      <div class="bvr-badge">🤖 <span>Groq AI</span></div>
+    </div>
+  </div>
+  <div class="content">
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+<script>
+// Check Ollama status
+async function checkStatus() {
+  try {
+    const r = await fetch('/api/status');
+    const d = await r.json();
+    const el = document.getElementById('ollamaStatus');
+    if(d.status === 'online') {
+      el.className = 'sidebar-status online';
+      el.innerHTML = '<div class="status-dot"></div><span>Groq AI Online ✓</span>';
+    } else {
+      el.className = 'sidebar-status offline';
+      el.innerHTML = '<div class="status-dot"></div><span>Groq AI Offline ✗</span>';
+    }
+  } catch(e) {}
+}
+checkStatus();
+setInterval(checkStatus, 30000);
+
+// Show result helper
+function showResult(text, containerId='result') {
+  const el = document.getElementById(containerId);
+  if(el) { el.textContent = text; el.className = 'result-box show'; }
+}
+function showLoading(show, id='loading') {
+  const el = document.getElementById(id);
+  if(el) el.className = show ? 'loading show' : 'loading';
+}
+function setBtn(id, disabled, text='') {
+  const el = document.getElementById(id);
+  if(el) { el.disabled = disabled; if(text) el.innerHTML = text; }
+}
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

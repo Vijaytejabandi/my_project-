@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Medical History - MedAI Pro{% endblock %}
+{% block page_title %}📋 Medical History{% endblock %}
+{% block content %}
+<style>
+.history-entry { padding:16px; background:var(--bg3); border:1px solid var(--border); border-radius:12px; margin-bottom:10px; }
+.history-entry .entry-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.history-entry .entry-type { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:600; }
+</style>
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title">Add Medical Record</div>
+    <div class="form-group"><label>Patient ID</label>
+      <input type="text" id="patient_id" placeholder="Enter patient ID (from Patient Profile)"></div>
+    <div class="form-row"><div class="form-group"><label>Record Type</label>
+        <select id="record_type" onchange="updateFields()">
+          <option value="visit">Doctor Visit</option>
+          <option value="diagnosis">Diagnosis</option>
+          <option value="medication">Medication</option>
+          <option value="test">Lab Test / Scan</option>
+          <option value="surgery">Surgery / Procedure</option>
+          <option value="allergy">Allergy Record</option>
+          <option value="vaccination">Vaccination</option>
+        </select></div>
+      <div class="form-group"><label>Date</label>
+        <input type="date" id="record_date"></div></div>
+    <div class="form-group"><label>Title / Summary</label>
+      <input type="text" id="title" placeholder="Brief description of this record"></div>
+    <div class="form-group"><label>Details / Notes</label>
+      <textarea id="details" rows="4" placeholder="Full details, doctor name, findings, prescriptions, results..."></textarea></div>
+    <div class="form-row"><div class="form-group"><label>Doctor / Hospital</label>
+        <input type="text" id="doctor" placeholder="Doctor name or hospital"></div>
+      <div class="form-group"><label>Follow-up Date</label>
+        <input type="date" id="followup"></div></div>
+    <button class="btn btn-primary" id="saveBtn" onclick="saveHistory()" style="width:100%">
+      <i class="fas fa-plus"></i> Add Record</button>
+    <div id="saveMsg" style="display:none;margin-top:10px;padding:10px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:8px;color:var(--accent3);font-size:13px">✅ Record saved!</div>
+  </div>
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="card-title">Medical Timeline</div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="search_pid" placeholder="Enter Patient ID" style="width:160px;padding:8px 12px;font-size:13px">
+        <button class="btn btn-secondary" onclick="loadHistory()" style="padding:8px 14px;font-size:13px"><i class="fas fa-search"></i></button>
+      </div>
+    </div>
+    <div id="historyList"><div style="text-align:center;padding:40px;color:var(--text3)">
+      <div style="font-size:50px;margin-bottom:12px">📋</div>
+      <div>Enter a Patient ID and click search to view medical history</div>
+    </div></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const typeColors = {visit:'rgba(0,212,255,0.1)',diagnosis:'rgba(239,68,68,0.1)',medication:'rgba(124,58,237,0.1)',test:'rgba(245,158,11,0.1)',surgery:'rgba(16,185,129,0.1)',allergy:'rgba(239,68,68,0.15)',vaccination:'rgba(16,185,129,0.15)'};
+const typeText = {visit:'var(--accent)',diagnosis:'var(--red)',medication:'var(--accent2)',test:'var(--yellow)',surgery:'var(--accent3)',allergy:'var(--red)',vaccination:'var(--accent3)'};
+const typeIcon = {visit:'🏥',diagnosis:'🔬',medication:'💊',test:'🧪',surgery:'⚕️',allergy:'⚠️',vaccination:'💉'};
+
+document.getElementById('record_date').valueAsDate = new Date();
+
+async function saveHistory() {
+  const title = document.getElementById('title').value.trim();
+  if(!title) { alert('Please enter a title!'); return; }
+  setBtn('saveBtn', true, '<i class="fas fa-spinner fa-spin"></i> Saving...');
+  try {
+    const r = await fetch('/api/save-history', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        patient_id: document.getElementById('patient_id').value || 'guest',
+        record_type: document.getElementById('record_type').value,
+        title, details: document.getElementById('details').value,
+        record_date: document.getElementById('record_date').value,
+        doctor: document.getElementById('doctor').value,
+        followup: document.getElementById('followup').value
+      })
+    });
+    await r.json();
+    document.getElementById('saveMsg').style.display='block';
+    setTimeout(()=>document.getElementById('saveMsg').style.display='none', 3000);
+    if(document.getElementById('search_pid').value || document.getElementById('patient_id').value) loadHistory();
+  } catch(e) { alert('Error: '+e.message); }
+  setBtn('saveBtn', false, '<i class="fas fa-plus"></i> Add Record');
+}
+
+async function loadHistory() {
+  const pid = document.getElementById('search_pid').value || document.getElementById('patient_id').value;
+  if(!pid) { alert('Enter a Patient ID!'); return; }
+  try {
+    const r = await fetch('/api/get-history/'+pid);
+    const history = await r.json();
+    const list = document.getElementById('historyList');
+    if(!history.length) { list.innerHTML='<div style="text-align:center;padding:30px;color:var(--text3)">No records found for this patient</div>'; return; }
+    list.innerHTML = [...history].reverse().map(h=>`
+      <div class="history-entry">
+        <div class="entry-header">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span>${typeIcon[h.record_type]||'📄'}</span>
+            <div>
+              <div style="font-weight:600;font-size:14px">${h.title}</div>
+              <div style="font-size:11px;color:var(--text3)">${h.record_date||h.date?.split('T')[0]} ${h.doctor?'• '+h.doctor:''}</div>
+            </div>
+          </div>
+          <span class="entry-type" style="background:${typeColors[h.record_type]||'rgba(0,0,0,0.1)'};color:${typeText[h.record_type]||'var(--text2)'}">${h.record_type||'Record'}</span>
+        </div>
+        ${h.details?`<div style="font-size:13px;color:var(--text2);line-height:1.6">${h.details}</div>`:''}
+        ${h.followup?`<div style="font-size:12px;color:var(--yellow);margin-top:6px">📅 Follow-up: ${h.followup}</div>`:''}
+      </div>`).join('');
+  } catch(e) { alert('Error loading history'); }
+}
+</script>
+{% endblock %}

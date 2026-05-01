@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Injury Analyzer - MedAI Pro{% endblock %}
+{% block page_title %}🩹 Injury Analyzer{% endblock %}
+{% block content %}
+<div class="disclaimer"><i class="fas fa-triangle-exclamation"></i><span>For life-threatening injuries, call emergency services (112/108) immediately. This AI provides first aid guidance only.</span></div>
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title">Describe Your Injury</div>
+    <div class="card-sub">Get first aid guidance and severity assessment</div>
+    <div class="form-group"><label>Injury Location on Body</label>
+      <input type="text" id="location" placeholder="e.g. Left knee, Right wrist, Head, Back..."></div>
+    <div class="form-group"><label>How did it happen?</label>
+      <textarea id="description" rows="3" placeholder="e.g. I fell from stairs and landed on my knee. There is swelling and bruising. Cannot bend the knee..."></textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label>Pain Level (1-10)</label>
+        <input type="range" id="pain_level" min="1" max="10" value="5" oninput="document.getElementById('painVal').textContent=this.value">
+        <div style="text-align:center;font-size:18px;font-weight:700;color:var(--accent);margin-top:4px" id="painVal">5</div></div>
+      <div class="form-group"><label>Time Since Injury</label>
+        <select id="time_since">
+          <option>Just happened</option><option>Less than 1 hour</option>
+          <option>1-6 hours</option><option>6-24 hours</option><option>More than 24 hours</option>
+        </select></div>
+    </div>
+    <div class="form-group"><label>Visible Signs</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px" id="signs">
+        <label style="display:flex;gap:6px;align-items:center;cursor:pointer;color:var(--text);font-size:13px;background:var(--bg3);padding:6px 12px;border-radius:8px;border:1px solid var(--border)"><input type="checkbox" value="Bleeding"> Bleeding</label>
+        <label style="display:flex;gap:6px;align-items:center;cursor:pointer;color:var(--text);font-size:13px;background:var(--bg3);padding:6px 12px;border-radius:8px;border:1px solid var(--border)"><input type="checkbox" value="Swelling"> Swelling</label>
+        <label style="display:flex;gap:6px;align-items:center;cursor:pointer;color:var(--text);font-size:13px;background:var(--bg3);padding:6px 12px;border-radius:8px;border:1px solid var(--border)"><input type="checkbox" value="Bruising"> Bruising</label>
+        <label style="display:flex;gap:6px;align-items:center;cursor:pointer;color:var(--text);font-size:13px;background:var(--bg3);padding:6px 12px;border-radius:8px;border:1px solid var(--border)"><input type="checkbox" value="Deformity"> Deformity</label>
+        <label style="display:flex;gap:6px;align-items:center;cursor:pointer;color:var(--text);font-size:13px;background:var(--bg3);padding:6px 12px;border-radius:8px;border:1px solid var(--border)"><input type="checkbox" value="Open wound"> Open wound</label>
+        <label style="display:flex;gap:6px;align-items:center;cursor:pointer;color:var(--text);font-size:13px;background:var(--bg3);padding:6px 12px;border-radius:8px;border:1px solid var(--border)"><input type="checkbox" value="Numbness"> Numbness</label>
+      </div></div>
+    <button class="btn btn-primary" id="analyzeBtn" onclick="analyzeInjury()" style="width:100%;margin-top:8px">
+      <i class="fas fa-bandage"></i> Analyze Injury</button>
+    <div class="loading" id="loading"><div class="spinner"></div><span>Assessing injury...</span></div>
+  </div>
+  <div>
+    <div class="result-box" id="result"></div>
+    <div class="card" id="emptyState"><div style="text-align:center;padding:40px 20px;color:var(--text3)">
+      <div style="font-size:60px;margin-bottom:16px">🩹</div>
+      <div style="font-size:15px;color:var(--text2)">Describe your injury to get first aid guidance</div>
+    </div></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function analyzeInjury() {
+  const desc = document.getElementById('description').value.trim();
+  if (!desc) { alert('Please describe your injury!'); return; }
+  const signs = [...document.querySelectorAll('#signs input:checked')].map(c=>c.value).join(', ') || 'None reported';
+  setBtn('analyzeBtn', true, '<i class="fas fa-spinner fa-spin"></i> Analyzing...');
+  showLoading(true);
+  document.getElementById('emptyState').style.display='none';
+  try {
+    const fd = new FormData();
+    fd.append('description', desc + '. Visible signs: ' + signs + '. Time since injury: ' + document.getElementById('time_since').value);
+    fd.append('location', document.getElementById('location').value);
+    fd.append('pain_level', document.getElementById('pain_level').value);
+    const r = await fetch('/api/analyze-injury', {method:'POST', body:fd});
+    const d = await r.json();
+    showResult(d.result);
+  } catch(e) { alert('Error: '+e.message); document.getElementById('emptyState').style.display='block'; }
+  showLoading(false);
+  setBtn('analyzeBtn', false, '<i class="fas fa-bandage"></i> Analyze Injury');
+}
+</script>
+{% endblock %}

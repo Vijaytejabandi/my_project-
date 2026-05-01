@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Mental Health Check - MedAI Pro{% endblock %}
+{% block page_title %}🧠 Mental Health Check{% endblock %}
+{% block content %}
+<div class="disclaimer"><i class="fas fa-triangle-exclamation"></i><span>This is a wellness check tool, not a clinical diagnosis. If in crisis, call iCall: 9152987821 (India) or your local emergency number.</span></div>
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title">Mental Wellness Assessment</div>
+    <div class="card-sub">Rate your current state over the past 2 weeks</div>
+    <div class="form-group"><label>Overall Mood: <span id="moodVal" style="color:var(--accent)">5</span>/10</label>
+      <input type="range" id="mood" min="1" max="10" value="5" oninput="document.getElementById('moodVal').textContent=this.value"></div>
+    <div class="form-group"><label>Anxiety Level: <span id="anxietyVal" style="color:var(--yellow)">5</span>/10</label>
+      <input type="range" id="anxiety" min="1" max="10" value="5" oninput="document.getElementById('anxietyVal').textContent=this.value"></div>
+    <div class="form-group"><label>Sleep Quality: <span id="sleepVal" style="color:var(--accent3)">5</span>/10</label>
+      <input type="range" id="sleep" min="1" max="10" value="5" oninput="document.getElementById('sleepVal').textContent=this.value"></div>
+    <div class="form-group"><label>Energy Level: <span id="energyVal" style="color:var(--accent2)">5</span>/10</label>
+      <input type="range" id="energy" min="1" max="10" value="5" oninput="document.getElementById('energyVal').textContent=this.value"></div>
+    <div class="form-group"><label>Main Concerns or Feelings</label>
+      <textarea id="concerns" rows="3" placeholder="e.g. Feeling overwhelmed with work, relationship stress, feeling isolated, can't focus..."></textarea></div>
+    <div class="form-group"><label>Recent Life Events (optional)</label>
+      <textarea id="events" rows="2" placeholder="e.g. Job loss, breakup, exam pressure, family issues, moving..."></textarea></div>
+    <button class="btn btn-purple" id="mentalBtn" onclick="checkMentalHealth()" style="width:100%">
+      <i class="fas fa-brain"></i> Check My Wellbeing</button>
+    <div class="loading" id="loading"><div class="spinner"></div><span>Analyzing your mental wellness...</span></div>
+  </div>
+  <div>
+    <div class="result-box" id="result"></div>
+    <div class="card" id="emptyState">
+      <div style="text-align:center;padding:30px 20px;color:var(--text3)">
+        <div style="font-size:60px;margin-bottom:16px">🧠</div>
+        <div style="font-size:15px;color:var(--text2);margin-bottom:8px">Your mental health matters</div>
+        <div style="font-size:13px">Rate your wellbeing and get personalized coping strategies</div>
+      </div>
+    </div>
+    <div class="card" style="background:rgba(124,58,237,0.05);border-color:rgba(124,58,237,0.2)">
+      <div class="card-title" style="color:var(--accent2);margin-bottom:10px">🆘 Crisis Resources (India)</div>
+      <div style="font-size:13px;color:var(--text2);line-height:2.2">
+        📞 iCall: <strong style="color:var(--text)">9152987821</strong><br>
+        📞 Vandrevala Foundation: <strong style="color:var(--text)">1860-2662-345</strong><br>
+        📞 NIMHANS: <strong style="color:var(--text)">080-46110007</strong><br>
+        📞 Emergency: <strong style="color:var(--red)">112</strong>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function checkMentalHealth() {
+  setBtn('mentalBtn', true, '<i class="fas fa-spinner fa-spin"></i> Analyzing...');
+  showLoading(true);
+  document.getElementById('emptyState').style.display='none';
+  try {
+    const r = await fetch('/api/mental-health-check', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        mood: document.getElementById('mood').value,
+        anxiety: document.getElementById('anxiety').value,
+        sleep: document.getElementById('sleep').value,
+        energy: document.getElementById('energy').value,
+        concerns: document.getElementById('concerns').value,
+        events: document.getElementById('events').value
+      })
+    });
+    const d = await r.json();
+    showResult(d.result);
+  } catch(e) { alert('Error: '+e.message); document.getElementById('emptyState').style.display='block'; }
+  showLoading(false);
+  setBtn('mentalBtn', false, '<i class="fas fa-brain"></i> Check My Wellbeing');
+}
+</script>
+{% endblock %}

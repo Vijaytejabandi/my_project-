@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Patient Profile - MedAI Pro{% endblock %}
+{% block page_title %}👤 Patient Profile{% endblock %}
+{% block content %}
+<style>
+.patient-list { max-height:300px; overflow-y:auto; }
+.patient-row { padding:12px 16px; background:var(--bg3); border:1px solid var(--border); border-radius:10px; margin-bottom:8px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:space-between; }
+.patient-row:hover { border-color:var(--accent); }
+</style>
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title">Patient Information</div>
+    <div class="form-group"><label>Patient ID (auto-generated if empty)</label>
+      <input type="text" id="pid" placeholder="Leave empty for new patient"></div>
+    <div class="form-row"><div class="form-group"><label>Full Name</label>
+        <input type="text" id="name" placeholder="Patient's full name"></div>
+      <div class="form-group"><label>Age</label>
+        <input type="number" id="age" placeholder="Years"></div></div>
+    <div class="form-row"><div class="form-group"><label>Gender</label>
+        <select id="gender"><option>Male</option><option>Female</option><option>Other</option></select></div>
+      <div class="form-group"><label>Blood Group</label>
+        <select id="blood"><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option><option>Unknown</option></select></div></div>
+    <div class="form-row"><div class="form-group"><label>Phone</label>
+        <input type="text" id="phone" placeholder="+91 XXXXXXXXXX"></div>
+      <div class="form-group"><label>Emergency Contact</label>
+        <input type="text" id="emergency" placeholder="Name & phone"></div></div>
+    <div class="form-group"><label>Known Allergies</label>
+      <input type="text" id="allergies" placeholder="e.g. Penicillin, Peanuts, none"></div>
+    <div class="form-group"><label>Existing Medical Conditions</label>
+      <textarea id="conditions" rows="2" placeholder="e.g. Type 2 Diabetes, Hypertension..."></textarea></div>
+    <div class="form-group"><label>Current Medications</label>
+      <textarea id="medications" rows="2" placeholder="List all current medications and dosages..."></textarea></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" id="saveBtn" onclick="savePatient()" style="flex:1">
+        <i class="fas fa-save"></i> Save Patient</button>
+      <button class="btn btn-secondary" onclick="clearForm()"><i class="fas fa-plus"></i> New</button>
+    </div>
+    <div id="saveMsg" style="display:none;margin-top:10px;padding:10px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:8px;color:var(--accent3);font-size:13px"></div>
+  </div>
+  <div>
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="card-title">Saved Patients</div>
+        <button class="btn btn-secondary" onclick="loadPatients()" style="font-size:12px;padding:6px 12px"><i class="fas fa-refresh"></i></button>
+      </div>
+      <div class="patient-list" id="patientList">
+        <div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">No patients saved yet</div>
+      </div>
+    </div>
+    <div class="card" id="viewCard" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="card-title">Patient Details</div>
+        <button onclick="document.getElementById('viewCard').style.display='none'" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px">✕</button>
+      </div>
+      <div id="viewDetails" style="font-size:13px;line-height:2;color:var(--text2)"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function savePatient() {
+  const name = document.getElementById('name').value.trim();
+  if(!name) { alert('Please enter patient name!'); return; }
+  setBtn('saveBtn', true, '<i class="fas fa-spinner fa-spin"></i> Saving...');
+  try {
+    const r = await fetch('/api/save-patient', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        id: document.getElementById('pid').value,
+        name, age: document.getElementById('age').value,
+        gender: document.getElementById('gender').value,
+        blood: document.getElementById('blood').value,
+        phone: document.getElementById('phone').value,
+        emergency: document.getElementById('emergency').value,
+        allergies: document.getElementById('allergies').value,
+        conditions: document.getElementById('conditions').value,
+        medications: document.getElementById('medications').value
+      })
+    });
+    const d = await r.json();
+    const msg = document.getElementById('saveMsg');
+    msg.style.display='block';
+    msg.textContent = `✅ Patient saved! ID: ${d.id}`;
+    document.getElementById('pid').value = d.id;
+    loadPatients();
+  } catch(e) { alert('Error: '+e.message); }
+  setBtn('saveBtn', false, '<i class="fas fa-save"></i> Save Patient');
+}
+async function loadPatients() {
+  try {
+    const r = await fetch('/api/list-patients');
+    const patients = await r.json();
+    const list = document.getElementById('patientList');
+    if(!patients.length) { list.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">No patients saved yet</div>'; return; }
+    list.innerHTML = patients.map(p => `
+      <div class="patient-row" onclick="viewPatient('${p.id}')">
+        <div><div style="font-weight:600">${p.name}</div><div style="font-size:12px;color:var(--text2)">${p.age||'?'} yrs • ${p.blood||'?'} • ID: ${p.id}</div></div>
+        <div style="color:var(--text3);font-size:12px"><i class="fas fa-chevron-right"></i></div>
+      </div>`).join('');
+  } catch(e) {}
+}
+async function viewPatient(pid) {
+  const r = await fetch('/api/get-patient/'+pid);
+  const p = await r.json();
+  document.getElementById('viewDetails').innerHTML = Object.entries(p).filter(([k])=>k!=='id'&&k!=='updated').map(([k,v])=>`<div><strong style="color:var(--text);text-transform:capitalize">${k}:</strong> ${v||'—'}</div>`).join('');
+  document.getElementById('viewCard').style.display='block';
+  // Load into form
+  Object.keys(p).forEach(k => { const el=document.getElementById(k); if(el) el.value=p[k]||''; });
+}
+function clearForm() {
+  ['pid','name','age','phone','emergency','allergies','conditions','medications'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('saveMsg').style.display='none';
+}
+loadPatients();
+</script>
+{% endblock %}

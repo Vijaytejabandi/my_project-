@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Nearby Hospitals - MedAI Pro{% endblock %}
+{% block page_title %}🏥 Nearby Hospitals & Clinics{% endblock %}
+{% block content %}
+<style>
+.map-container { width:100%; height:450px; border-radius:16px; overflow:hidden; border:1px solid var(--border); position:relative; }
+.facility-card { padding:16px; background:var(--bg3); border:1px solid var(--border); border-radius:12px; margin-bottom:10px; cursor:pointer; transition:all 0.2s; }
+.facility-card:hover { border-color:var(--accent); }
+.facility-type { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; }
+</style>
+
+<div class="grid-2" style="grid-template-columns:1fr 380px">
+  <div>
+    <div class="card" style="padding:16px;margin-bottom:16px">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-primary" onclick="findLocation()"><i class="fas fa-location-dot"></i> Use My Location</button>
+        <input type="text" id="manualCity" placeholder="Or enter city/area..." style="flex:1;min-width:180px">
+        <button class="btn btn-secondary" onclick="searchByCity()"><i class="fas fa-search"></i> Search</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap" id="filterBtns">
+        <button class="btn btn-secondary active-filter" onclick="filterType('hospital')" id="f-hospital" style="font-size:12px;padding:6px 14px">🏥 Hospitals</button>
+        <button class="btn btn-secondary" onclick="filterType('clinic')" id="f-clinic" style="font-size:12px;padding:6px 14px">🏨 Clinics</button>
+        <button class="btn btn-secondary" onclick="filterType('pharmacy')" id="f-pharmacy" style="font-size:12px;padding:6px 14px">💊 Pharmacies</button>
+        <button class="btn btn-secondary" onclick="filterType('emergency')" id="f-emergency" style="font-size:12px;padding:6px 14px">🚨 Emergency</button>
+      </div>
+    </div>
+    <div class="map-container">
+      <iframe id="mapFrame" src="about:blank" style="width:100%;height:100%;border:none"></iframe>
+      <div id="mapPlaceholder" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg3);color:var(--text3)">
+        <div style="font-size:50px;margin-bottom:12px">🗺️</div>
+        <div style="font-size:15px;color:var(--text2);margin-bottom:8px">Find Hospitals Near You</div>
+        <div style="font-size:13px">Click "Use My Location" to find nearby medical facilities</div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="card" style="height:calc(450px + 80px);overflow-y:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="card-title">Nearby Facilities</div>
+        <span id="resultCount" style="font-size:12px;color:var(--text3)"></span>
+      </div>
+      <div id="facilityList">
+        <div style="text-align:center;padding:40px 20px;color:var(--text3);font-size:13px">
+          <div style="font-size:40px;margin-bottom:10px">🏥</div>
+          Enable location to see nearby hospitals, clinics and pharmacies
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:0">
+  <div class="card-title" style="margin-bottom:14px">📞 Emergency Numbers (India)</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
+    <div style="padding:14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px;text-align:center">
+      <div style="font-size:22px;margin-bottom:4px">🚨</div>
+      <div style="font-weight:700;font-size:22px;color:var(--red)">112</div>
+      <div style="font-size:12px;color:var(--text2)">National Emergency</div>
+    </div>
+    <div style="padding:14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px;text-align:center">
+      <div style="font-size:22px;margin-bottom:4px">🚑</div>
+      <div style="font-weight:700;font-size:22px;color:var(--red)">108</div>
+      <div style="font-size:12px;color:var(--text2)">Ambulance (AP/Telangana)</div>
+    </div>
+    <div style="padding:14px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;text-align:center">
+      <div style="font-size:22px;margin-bottom:4px">🚒</div>
+      <div style="font-weight:700;font-size:22px;color:var(--yellow)">101</div>
+      <div style="font-size:12px;color:var(--text2)">Fire Department</div>
+    </div>
+    <div style="padding:14px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);border-radius:10px;text-align:center">
+      <div style="font-size:22px;margin-bottom:4px">👮</div>
+      <div style="font-weight:700;font-size:22px;color:var(--accent)">100</div>
+      <div style="font-size:12px;color:var(--text2)">Police</div>
+    </div>
+    <div style="padding:14px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:10px;text-align:center">
+      <div style="font-size:22px;margin-bottom:4px">🧠</div>
+      <div style="font-weight:700;font-size:20px;color:var(--accent2)">iCall</div>
+      <div style="font-size:12px;color:var(--text2)">9152987821 (Mental Health)</div>
+    </div>
+    <div style="padding:14px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:10px;text-align:center">
+      <div style="font-size:22px;margin-bottom:4px">💊</div>
+      <div style="font-weight:700;font-size:20px;color:var(--accent3)">Poison</div>
+      <div style="font-size:12px;color:var(--text2)">1800-116-117</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let userLat, userLng, currentType='hospital';
+
+function findLocation() {
+  if(!navigator.geolocation) { alert('Geolocation not supported'); return; }
+  navigator.geolocation.getCurrentPosition(pos => {
+    userLat = pos.coords.latitude;
+    userLng = pos.coords.longitude;
+    showMap(userLat, userLng, currentType);
+  }, err => { alert('Location access denied. Please enter city manually.'); });
+}
+
+function searchByCity() {
+  const city = document.getElementById('manualCity').value.trim();
+  if(!city) return;
+  const q = encodeURIComponent(currentType + ' near ' + city);
+  const url = `https://www.google.com/maps/embed/v1/search?key=AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY&q=${q}`;
+  document.getElementById('mapFrame').src = url;
+  document.getElementById('mapPlaceholder').style.display='none';
+}
+
+function showMap(lat, lng, type) {
+  const q = encodeURIComponent(type + ' near me');
+  const url = `https://maps.google.com/maps?q=${q}&near=${lat},${lng}&output=embed`;
+  const searchUrl = `https://www.google.com/maps/embed/v1/search?key=AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY&q=${encodeURIComponent(type)}&center=${lat},${lng}&zoom=14`;
+  document.getElementById('mapFrame').src = searchUrl;
+  document.getElementById('mapPlaceholder').style.display='none';
+  showNearbyList(lat, lng, type);
+}
+
+function filterType(type) {
+  currentType = type;
+  document.querySelectorAll('[id^="f-"]').forEach(b=>b.style.borderColor='var(--border)');
+  document.getElementById('f-'+type).style.borderColor='var(--accent)';
+  if(userLat) showMap(userLat, userLng, type);
+  else searchByCity();
+}
+
+function showNearbyList(lat, lng, type) {
+  const typeConfig = {
+    hospital:{icon:'🏥',color:'var(--red)',label:'Hospital'},
+    clinic:{icon:'🏨',color:'var(--accent)',label:'Clinic'},
+    pharmacy:{icon:'💊',color:'var(--accent3)',label:'Pharmacy'},
+    emergency:{icon:'🚨',color:'var(--red)',label:'Emergency'}
+  };
+  const cfg = typeConfig[type] || typeConfig.hospital;
+  const gmapsUrl = `https://www.google.com/maps/search/${type}/@${lat},${lng},14z`;
+  document.getElementById('facilityList').innerHTML = `
+    <div style="padding:20px;text-align:center">
+      <div style="font-size:40px;margin-bottom:12px">${cfg.icon}</div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:8px">Map showing nearby ${type}s</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Your location: ${lat.toFixed(4)}, ${lng.toFixed(4)}</div>
+      <a href="${gmapsUrl}" target="_blank" class="btn btn-primary" style="display:inline-flex">
+        <i class="fas fa-external-link-alt"></i> Open in Google Maps</a>
+      <div style="margin-top:20px;padding:14px;background:var(--bg3);border-radius:10px;font-size:13px;color:var(--text2);line-height:1.8">
+        📍 Location found!<br>
+        The map shows nearby ${type}s.<br>
+        For full listings, click "Open in Google Maps"<br>
+        to get directions, reviews and contact info.
+      </div>
+    </div>`;
+  document.getElementById('resultCount').textContent = 'Live location ✓';
+}
+</script>
+{% endblock %}

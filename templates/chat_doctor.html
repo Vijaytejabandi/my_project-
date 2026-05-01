@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}Chat Doctor - MedAI Pro{% endblock %}
+{% block page_title %}🤖 Chat with Dr. AI{% endblock %}
+{% block content %}
+<style>
+.chat-container { display:grid; grid-template-columns:1fr 300px; gap:20px; height:calc(100vh - 160px); }
+.chat-main { display:flex; flex-direction:column; }
+.chat-messages {
+  flex:1; background:var(--card); border:1px solid var(--border); border-radius:16px 16px 0 0;
+  padding:20px; overflow-y:auto; display:flex; flex-direction:column; gap:14px;
+}
+.msg { display:flex; gap:12px; animation:fadeIn 0.3s ease; }
+.msg.user { flex-direction:row-reverse; }
+.msg-avatar {
+  width:36px; height:36px; border-radius:50%; display:flex; align-items:center;
+  justify-content:center; font-size:16px; flex-shrink:0; margin-top:4px;
+}
+.msg.ai .msg-avatar { background:linear-gradient(135deg,var(--accent),var(--accent2)); }
+.msg.user .msg-avatar { background:var(--card2); }
+.msg-bubble {
+  max-width:75%; padding:12px 16px; border-radius:16px; font-size:14px; line-height:1.6;
+  white-space:pre-wrap;
+}
+.msg.ai .msg-bubble { background:var(--bg3); border:1px solid var(--border); border-top-left-radius:4px; }
+.msg.user .msg-bubble { background:linear-gradient(135deg,var(--accent),#0099cc); color:#000; border-top-right-radius:4px; font-weight:500; }
+.msg-time { font-size:11px; color:var(--text3); margin-top:4px; }
+.msg.user .msg-time { text-align:right; }
+
+.chat-input-area {
+  background:var(--card2); border:1px solid var(--border); border-top:none;
+  border-radius:0 0 16px 16px; padding:16px; display:flex; gap:10px; align-items:flex-end;
+}
+.chat-input-area textarea {
+  flex:1; resize:none; min-height:44px; max-height:120px;
+}
+.send-btn {
+  width:44px; height:44px; border-radius:10px; border:none;
+  background:linear-gradient(135deg,var(--accent),#0099cc); color:#000;
+  font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; transition:all 0.2s;
+}
+.send-btn:hover { transform:scale(1.05); }
+.send-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+.typing { display:none; }
+.typing.show { display:flex; }
+.typing-dot { width:7px; height:7px; border-radius:50%; background:var(--text3); animation:bounce 1.2s infinite; }
+.typing-dot:nth-child(2) { animation-delay:0.2s; }
+.typing-dot:nth-child(3) { animation-delay:0.4s; }
+@keyframes bounce { 0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-8px)} }
+
+.chat-sidebar { display:flex; flex-direction:column; gap:14px; }
+.quick-questions { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px; }
+.quick-q { padding:9px 13px; background:var(--bg3); border:1px solid var(--border); border-radius:8px; font-size:12.5px; cursor:pointer; margin-bottom:7px; transition:all 0.2s; }
+.quick-q:hover { border-color:var(--accent); color:var(--accent); }
+</style>
+
+<div class="chat-container">
+  <div class="chat-main">
+    <div class="chat-messages" id="chatMessages">
+      <div class="msg ai">
+        <div class="msg-avatar">🤖</div>
+        <div>
+          <div class="msg-bubble">Hello! I'm Dr. AI, your virtual medical assistant. 👨‍⚕️
+
+I can help you with:
+• Medical questions and information
+• Understanding symptoms
+• General health advice
+• Medicine information
+• First aid guidance
+
+Please remember: I provide general information only. Always consult a real doctor for diagnosis and treatment.
+
+How can I help you today?</div>
+          <div class="msg-time">Dr. AI • Just now</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input-area">
+      <textarea id="chatInput" placeholder="Ask Dr. AI anything about your health..." rows="1" onkeydown="handleKey(event)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="chat-sidebar">
+    <div class="quick-questions">
+      <div class="card-title" style="margin-bottom:12px">💬 Quick Questions</div>
+      <div class="quick-q" onclick="askQuestion(this.textContent)">What are symptoms of diabetes?</div>
+      <div class="quick-q" onclick="askQuestion(this.textContent)">How to lower blood pressure naturally?</div>
+      <div class="quick-q" onclick="askQuestion(this.textContent)">What causes frequent headaches?</div>
+      <div class="quick-q" onclick="askQuestion(this.textContent)">How much water should I drink daily?</div>
+      <div class="quick-q" onclick="askQuestion(this.textContent)">What are signs of vitamin D deficiency?</div>
+      <div class="quick-q" onclick="askQuestion(this.textContent)">How to improve sleep quality?</div>
+      <div class="quick-q" onclick="askQuestion(this.textContent)">What foods boost immunity?</div>
+      <div class="quick-q" onclick="askQuestion(this.textContent)">Signs of heart attack in women?</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px">ℹ️ About Dr. AI</div>
+      <div style="font-size:12.5px; color:var(--text2); line-height:1.8">
+        🤖 Powered by Groq AI<br>
+        🔒 Private & Secure<br>
+        💬 Remembers your conversation<br><br>
+        <span style="color:var(--yellow)">⚠️ Not a real doctor. Always consult healthcare professionals for medical decisions.</span>
+      </div>
+      <button class="btn btn-secondary" onclick="clearChat()" style="width:100%; margin-top:14px; font-size:13px">
+        <i class="fas fa-trash"></i> Clear Chat
+      </button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+const sessionId = 'session_' + Date.now();
+let isTyping = false;
+
+function getTime() {
+  return new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+}
+
+function addMessage(role, text) {
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.innerHTML = `
+    <div class="msg-avatar">${role === 'ai' ? '🤖' : '👤'}</div>
+    <div>
+      <div class="msg-bubble">${text}</div>
+      <div class="msg-time">${role === 'ai' ? 'Dr. AI' : 'You'} • ${getTime()}</div>
+    </div>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function showTyping() {
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.id = 'typingIndicator';
+  div.className = 'msg ai';
+  div.innerHTML = `<div class="msg-avatar">🤖</div>
+    <div class="msg-bubble" style="padding:14px 18px">
+      <div style="display:flex;gap:5px;align-items:center">
+        <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+      </div>
+    </div>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typingIndicator');
+  if (el) el.remove();
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg || isTyping) return;
+
+  input.value = '';
+  addMessage('user', msg);
+  isTyping = true;
+  document.getElementById('sendBtn').disabled = true;
+  showTyping();
+
+  try {
+    const r = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({message: msg, session_id: sessionId})
+    });
+    const d = await r.json();
+    removeTyping();
+    addMessage('ai', d.reply);
+  } catch(e) {
+    removeTyping();
+    addMessage('ai', '❌ Sorry, I could not connect to the AI. Please make sure Ollama is running.');
+  }
+  isTyping = false;
+  document.getElementById('sendBtn').disabled = false;
+}
+
+function askQuestion(q) {
+  document.getElementById('chatInput').value = q;
+  sendMessage();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function clearChat() {
+  if (!confirm('Clear chat history?')) return;
+  document.getElementById('chatMessages').innerHTML = '';
+  addMessage('ai', 'Chat cleared! How can I help you today? 😊');
+}
+</script>
+{% endblock %}

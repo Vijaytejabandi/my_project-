@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Drug Interaction Checker - MedAI Pro{% endblock %}
+{% block page_title %}⚗️ Drug Interaction Checker{% endblock %}
+{% block content %}
+<div class="disclaimer"><i class="fas fa-triangle-exclamation"></i><span>Consult your pharmacist or doctor before changing any medication. This tool is for reference only.</span></div>
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title">Enter Your Medications</div>
+    <div class="card-sub">Add all medicines you are currently taking</div>
+    <div class="form-group">
+      <label>Add Medications (press Enter after each)</label>
+      <div class="tag-input-area" id="tagArea" onclick="document.getElementById('drugInput').focus()">
+        <input type="text" class="tag-input" id="drugInput" placeholder="Type medicine name and press Enter...">
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-top:6px">Add at least 2 medicines to check interactions</div>
+    </div>
+    <div class="form-group"><label>Include (optional)</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <label style="display:flex;gap:6px;align-items:center;cursor:pointer;color:var(--text);font-size:13px;background:var(--bg3);padding:6px 12px;border-radius:8px;border:1px solid var(--border)"><input type="checkbox" id="includeSupplements"> Supplements & Vitamins</label>
+        <label style="display:flex;gap:6px;align-items:center;cursor:pointer;color:var(--text);font-size:13px;background:var(--bg3);padding:6px 12px;border-radius:8px;border:1px solid var(--border)"><input type="checkbox" id="includeFood"> Food Interactions</label>
+      </div></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" id="checkBtn" onclick="checkInteractions()" style="flex:1">
+        <i class="fas fa-flask"></i> Check Interactions</button>
+      <button class="btn btn-secondary" onclick="clearDrugs()"><i class="fas fa-trash"></i></button>
+    </div>
+    <div class="loading" id="loading"><div class="spinner"></div><span>Checking drug interactions...</span></div>
+    <div style="margin-top:20px"><div class="card-title" style="margin-bottom:10px;font-size:14px">⚡ Common Drug Combinations</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <button class="btn btn-secondary" onclick="addPreset(['Aspirin','Warfarin'])" style="font-size:12px;padding:6px 12px">Aspirin + Warfarin</button>
+        <button class="btn btn-secondary" onclick="addPreset(['Metformin','Ibuprofen'])" style="font-size:12px;padding:6px 12px">Metformin + Ibuprofen</button>
+        <button class="btn btn-secondary" onclick="addPreset(['Amlodipine','Atorvastatin','Metoprolol'])" style="font-size:12px;padding:6px 12px">Heart Meds Combo</button>
+      </div></div>
+  </div>
+  <div>
+    <div class="result-box" id="result"></div>
+    <div class="card" id="emptyState"><div style="text-align:center;padding:40px 20px;color:var(--text3)">
+      <div style="font-size:60px;margin-bottom:16px">⚗️</div>
+      <div style="font-size:15px;color:var(--text2)">Add your medications to check for dangerous interactions</div>
+    </div></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let drugs = [];
+document.getElementById('drugInput').addEventListener('keydown', function(e){
+  if(e.key==='Enter' || e.key===',') { e.preventDefault(); addDrug(this.value.trim()); this.value=''; }
+  if(e.key==='Backspace' && !this.value && drugs.length>0) removeDrug(drugs.length-1);
+});
+function addDrug(name) {
+  if(!name || drugs.includes(name)) return;
+  drugs.push(name);
+  renderTags();
+}
+function removeDrug(i) { drugs.splice(i,1); renderTags(); }
+function renderTags() {
+  const area = document.getElementById('tagArea');
+  const input = document.getElementById('drugInput');
+  area.innerHTML = '';
+  drugs.forEach((d,i) => {
+    const tag = document.createElement('div'); tag.className='tag';
+    tag.innerHTML = `${d} <span class="remove" onclick="removeDrug(${i})">✕</span>`;
+    area.appendChild(tag);
+  });
+  area.appendChild(input); input.focus();
+}
+function clearDrugs() { drugs=[]; renderTags(); document.getElementById('emptyState').style.display='block'; document.getElementById('result').className='result-box'; }
+function addPreset(arr) { clearDrugs(); arr.forEach(addDrug); }
+
+async function checkInteractions() {
+  if(drugs.length < 2) { alert('Please add at least 2 medications!'); return; }
+  let list = [...drugs];
+  if(document.getElementById('includeSupplements').checked) list.push('(also check common supplement interactions)');
+  if(document.getElementById('includeFood').checked) list.push('(also include food interactions)');
+  setBtn('checkBtn', true, '<i class="fas fa-spinner fa-spin"></i> Checking...');
+  showLoading(true);
+  document.getElementById('emptyState').style.display='none';
+  try {
+    const r = await fetch('/api/check-interaction', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({drugs: list})
+    });
+    const d = await r.json();
+    showResult(d.result);
+  } catch(e) { alert('Error: '+e.message); document.getElementById('emptyState').style.display='block'; }
+  showLoading(false);
+  setBtn('checkBtn', false, '<i class="fas fa-flask"></i> Check Interactions');
+}
+</script>
+{% endblock %}

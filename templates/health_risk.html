@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Health Risk Assessment - MedAI Pro{% endblock %}
+{% block page_title %}❤️ Health Risk Assessment{% endblock %}
+{% block content %}
+<div class="disclaimer"><i class="fas fa-triangle-exclamation"></i><span>Risk assessment for informational purposes. Consult your doctor for personalized health screening.</span></div>
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title">Personal Health Data</div>
+    <div class="form-row"><div class="form-group"><label>Age</label><input type="number" id="age" placeholder="Years"></div>
+      <div class="form-group"><label>Gender</label><select id="gender"><option>Male</option><option>Female</option><option>Other</option></select></div></div>
+    <div class="form-row"><div class="form-group"><label>Height (cm)</label><input type="number" id="height" placeholder="e.g. 170"></div>
+      <div class="form-group"><label>Weight (kg)</label><input type="number" id="weight" placeholder="e.g. 70"></div></div>
+    <div class="form-row"><div class="form-group"><label>Smoking</label>
+      <select id="smoking"><option>Never</option><option>Former</option><option>Current (light)</option><option>Current (heavy)</option></select></div>
+      <div class="form-group"><label>Alcohol</label>
+      <select id="alcohol"><option>Never</option><option>Rarely</option><option>Moderate</option><option>Heavy</option></select></div></div>
+    <div class="form-row"><div class="form-group"><label>Exercise (days/week)</label>
+      <select id="exercise"><option value="0">None</option><option value="1-2">1-2 days</option><option value="3-4">3-4 days</option><option value="5+">5+ days</option></select></div>
+      <div class="form-group"><label>Sleep (hours/night)</label>
+      <select id="sleep"><option>&lt;5 hours</option><option>5-6 hours</option><option>7-8 hours</option><option>9+ hours</option></select></div></div>
+    <div class="form-group"><label>Stress Level (1-10): <span id="stressVal">5</span></label>
+      <input type="range" id="stress" min="1" max="10" value="5" oninput="document.getElementById('stressVal').textContent=this.value"></div>
+    <div class="form-group"><label>Family History of Diseases</label>
+      <input type="text" id="family_history" placeholder="e.g. Heart disease, Diabetes, Cancer, Hypertension..."></div>
+    <div class="form-group"><label>Existing Medical Conditions</label>
+      <input type="text" id="conditions" placeholder="e.g. High blood pressure, Thyroid, Asthma..."></div>
+    <button class="btn btn-primary" id="assessBtn" onclick="assessRisk()" style="width:100%">
+      <i class="fas fa-heart-pulse"></i> Assess My Health Risk</button>
+    <div class="loading" id="loading"><div class="spinner"></div><span>Calculating your health risk profile...</span></div>
+  </div>
+  <div>
+    <div class="result-box" id="result"></div>
+    <div class="card" id="emptyState"><div style="text-align:center;padding:40px 20px;color:var(--text3)">
+      <div style="font-size:60px;margin-bottom:16px">❤️</div>
+      <div style="font-size:15px;color:var(--text2)">Fill in your health data to get a comprehensive risk assessment</div>
+    </div></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function assessRisk() {
+  setBtn('assessBtn', true, '<i class="fas fa-spinner fa-spin"></i> Assessing...');
+  showLoading(true);
+  document.getElementById('emptyState').style.display='none';
+  try {
+    const r = await fetch('/api/assess-risk', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        age: document.getElementById('age').value,
+        gender: document.getElementById('gender').value,
+        height: document.getElementById('height').value,
+        weight: document.getElementById('weight').value,
+        smoking: document.getElementById('smoking').value,
+        alcohol: document.getElementById('alcohol').value,
+        exercise: document.getElementById('exercise').value,
+        sleep: document.getElementById('sleep').value,
+        stress: document.getElementById('stress').value,
+        family_history: document.getElementById('family_history').value,
+        conditions: document.getElementById('conditions').value
+      })
+    });
+    const d = await r.json();
+    showResult(d.result);
+  } catch(e) { alert('Error: '+e.message); document.getElementById('emptyState').style.display='block'; }
+  showLoading(false);
+  setBtn('assessBtn', false, '<i class="fas fa-heart-pulse"></i> Assess My Health Risk');
+}
+</script>
+{% endblock %}
